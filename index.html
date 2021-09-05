@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Babylon Template</title>
+<style>
+    html, body {
+        overflow: hidden;
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        padding: 0;
+    }
+
+    #renderCanvas {
+        width: 100%;
+        height: 100%;
+        touch-action: none;
+    }
+</style>
+
+<script src="https://cdn.babylonjs.com/babylon.js"></script>
+<script src="https://cdn.babylonjs.com/loaders/babylonjs.loaders.min.js"></script>
+<script src="https://code.jquery.com/pep/0.4.3/pep.js"></script>
+<script src="https://cdn.babylonjs.com/ammo.js"></script>
+
+</head>
+
+<body>
+<canvas id="renderCanvas" touch-action="none"></canvas> <!-- touch-action="none" for best results from PEP -->
+
+<script>
+    const canvas = document.getElementById("renderCanvas"); // Get the canvas element
+    const engine = new BABYLON.Engine(canvas, true); // Generate the BABYLON 3D engine
+
+    // Add your code here matching the playground format
+    const createScene = () => {
+        const scene = new BABYLON.Scene(engine);
+
+        // Parameters : name, position, scene
+        const camera = new BABYLON.ArcRotateCamera("Camera", 0, 0, 2.5, new BABYLON.Vector3(0, 0, 0), scene);
+        //camera.attachControl(canvas, true);
+
+        const light = new BABYLON.PointLight("Point", new BABYLON.Vector3(5, 10, 5));
+        // Create a sprite manager
+
+        //const sound = new BABYLON.Sound("sound1", "../learning/Birds-chirping-sound-effect.mp3", scene, null, { loop: true, autoplay: true});
+
+        // Parameters : name, imgUrl, capacity, cellSize, scene
+        function generateBackground() {
+            const spriteManagerBackground = new BABYLON.SpriteManager("backgroundManager", "textures/background-day.png", 2000, {width: 288, height: 512});
+            const background = new BABYLON.Sprite("background", spriteManagerBackground);
+            return background
+        }
+
+        const background = generateBackground()
+        background.width = 1
+        background.height = 1.5
+
+        function generateGround() {
+            const spriteManagerGround = new BABYLON.SpriteManager("groundManager", "textures/base.png", 2000, {width: 336, height: 112});
+            const base = new BABYLON.Sprite("ground", spriteManagerGround);
+            return base
+        }
+
+        const ground = generateGround()
+        ground.width = 1
+        ground.height = 0.5
+        ground.position.x = 0.7
+
+        function generateBird() {
+            const spriteManagerBird = new BABYLON.SpriteManager("birdManager", "textures/birdSpriteSheet.png", 2000, {width: 34, height: 24});
+            const bird = new BABYLON.Sprite("bird", spriteManagerBird);
+            //bird.position.x = 0.1
+            return bird;
+        }
+
+
+        scene.enablePhysics(new BABYLON.Vector3(0.121, 0, 0), new BABYLON.AmmoJSPlugin());
+
+        const birdMaterial = new BABYLON.StandardMaterial("birdMaterial");
+        birdMaterial.diffuseTexture = new BABYLON.Texture("textures/redbird-downflap.png", scene, false, false, BABYLON.Texture.NEAREST_NEAREST)
+        birdMaterial.diffuseTexture.hasAlpha = true
+        //options parameter to set different images on each side
+        const faceUV = [];
+        faceUV[0] = new BABYLON.Vector4(0, 0, 1, 1); //rear face
+        faceUV[1] = new BABYLON.Vector4(0, 0, 1, 1); //front face
+        faceUV[2] = new BABYLON.Vector4(0, 0, 1, 1); //right side
+        faceUV[3] = new BABYLON.Vector4(0, 0, 1, 1); //left side
+        // top 4 and bottom 5 not seen so not set
+
+        const cylinder = BABYLON.MeshBuilder.CreateCylinder("cylinder", {height: 0.001, diameter: 0.07, faceUV: faceUV, wrap: true});
+        cylinder.position.y = 1;
+        cylinder.rotation.y = Math.PI/2
+        // cylinder.material = birdMaterial;
+
+        const birdSprite = generateBird()
+        birdSprite.width = 0.07
+        birdSprite.height = 0.05
+        birdSprite.position.y = 1.1;
+        birdSprite.playAnimation(0, 1, true, 100);
+
+        setInterval(function(){ 
+            birdSprite.position.x = cylinder.position.x
+            birdSprite.position.z = cylinder.position.z
+        }, 0);
+
+
+        const groundRigid = BABYLON.Mesh.CreateGround("groundRigid", 1, 1, 2, scene);
+        groundRigid.rotation.z = Math.PI/1.5;
+        groundRigid.position.x = 0.4
+
+        cylinder.physicsImpostor = new BABYLON.PhysicsImpostor(cylinder, BABYLON.PhysicsImpostor.SphereImpostor, { mass: 1, restitution: 0.9 }, scene);
+
+        groundRigid.physicsImpostor = new BABYLON.PhysicsImpostor(groundRigid, BABYLON.PhysicsImpostor.BoxImpostor, { mass: 0, restitution: 0.9 }, scene);
+
+        // window.addEventListener("click", function(){
+        //     bird.position.y = bird.position.y + 0.1
+        // });
+
+        return scene;
+    };;
+
+    //Call the createScene function
+    const scene = createScene(); 
+
+    // Register a render loop to repeatedly render the scene
+    engine.runRenderLoop(function () {
+            scene.render();
+    });
+
+    // Watch for browser/canvas resize events
+    window.addEventListener("resize", function () {
+            engine.resize();
+    });
+</script>
+
+</body>
+</html>
